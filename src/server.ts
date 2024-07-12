@@ -24,7 +24,7 @@ dotenv.config();
 const app = express();
 
 // Configuration
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = parseInt(process.env.PORT || '10000', 10);
 const MONGODB_URI = process.env.MONGODB_URI as string;
 const SESSION_SECRET = process.env.SESSION_SECRET as string;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string;
@@ -64,8 +64,8 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Start the server
-app.listen(10000, '0.0.0.0', () => {
-  console.log(`Server is running on http://0.0.0.0:${10000}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on http://0.0.0.0:${PORT}`);
 });
 
 // Section: Database Initialization
