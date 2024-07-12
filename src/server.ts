@@ -64,8 +64,8 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Start the server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on http://0.0.0.0:${PORT}`);
+app.listen(10000, '0.0.0.0', () => {
+  console.log(`Server is running on http://0.0.0.0:${10000}`);
 });
 
 // Section: Database Initialization
