@@ -13,7 +13,6 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import bodyParser from 'body-parser';
-
 import {
   GoogleGenerativeAI,
   HarmBlockThreshold,
@@ -25,7 +24,7 @@ dotenv.config();
 const app = express();
 
 // Configuration
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 const MONGODB_URI = process.env.MONGODB_URI as string;
 const SESSION_SECRET = process.env.SESSION_SECRET as string;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string;
@@ -35,7 +34,6 @@ const RANGE = process.env.RANGE as string;
 const TARGET_SPREADSHEET_ID = process.env.TARGET_SPREADSHEET_ID as string;
 const TARGET_RANGE = process.env.TARGET_RANGE as string;
 const CALLBACK_URL = 'http://localhost:3000/auth/google/callback';
-
 const GITHUB_API_URL = 'https://api.github.com';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const LAST_FETCHED_ROW_INDEX_FILE = './src/lastFetchedRowIndex.txt';
@@ -65,36 +63,9 @@ app.use(cors({
 // Serve the HTML form from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Endpoint to update the .env file
-app.post('/update-env', (req: Request, res: Response) => {
-  const { spreadsheetId, range, targetSpreadsheetId, targetRange, lastFetchedRow } = req.body;
-
-  const envPath = path.resolve(__dirname, '../.env');
-  const envConfig = dotenv.parse(fs.readFileSync(envPath));
-
-  envConfig.SPREADSHEET_ID = spreadsheetId;
-  envConfig.RANGE = range;
-  envConfig.TARGET_SPREADSHEET_ID = targetSpreadsheetId;
-  envConfig.TARGET_RANGE = targetRange;
-
-  const newEnvConfig = Object.keys(envConfig)
-      .map(key => `${key}=${envConfig[key]}`)
-      .join('\n');
-
-  fs.writeFileSync(envPath, newEnvConfig);
-
-  // Write last fetched row index to file
-  fs.writeFileSync(LAST_FETCHED_ROW_INDEX_FILE, lastFetchedRow.toString(), 'utf8');
-
-  // Reload .env file
-  dotenv.config({ path: envPath });
-
-  res.status(200).send('Environment variables updated successfully');
-});
-
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on http://0.0.0.0:${PORT}`);
 });
 
 // Section: Database Initialization
@@ -193,25 +164,8 @@ function configureRoutes(app: express.Express) {
   });
 
   // Route to bypass login for end-users
-  app.get('/bypass-login', async (req: Request, res: Response) => {
-    try {
-      const adminUser = await User.findOne(); // Assuming a single user for simplicity
-      if (adminUser) {
-        req.login(adminUser, (err) => {
-          if (err) {
-            console.error('Failed to login admin user', err);
-            return res.status(500).send('Failed to login');
-          }
-          return res.redirect('/');
-        });
-      } else {
-        res.status(500).send('Admin user not found');
-      }
-    } catch (error) {
-      console.error('Error in bypass-login route', error);
-      res.status(500).send('Internal Server Error');
-    }
-  });
+  app.get('/bypass-login', bypassLogin);
+  app.post('/update-env', updateEnv);
 }
 
 // Function to fetch the last fetched row index from the file
@@ -384,7 +338,7 @@ const model = genAI.getGenerativeModel({
   ],
 });
 
-async function gemini(){
+async function gemini() {
   const candidates = await fetchSpreadsheets();
 
   if (candidates === undefined) {
@@ -505,4 +459,60 @@ async function addJSONToSpreadsheet(data: any) {
 // Schedule tasks to run every minute
 cron.schedule('* * * * *', async () => {
   await gemini();
+});
+
+// Function to update the .env file
+function updateEnv(req: Request, res: Response) {
+  const { spreadsheetId, range, targetSpreadsheetId, targetRange, lastFetchedRow } = req.body;
+
+  const envPath = path.resolve(__dirname, '../.env');
+  const envConfig = dotenv.parse(fs.readFileSync(envPath));
+
+  envConfig.SPREADSHEET_ID = spreadsheetId;
+  envConfig.RANGE = range;
+  envConfig.TARGET_SPREADSHEET_ID = targetSpreadsheetId;
+  envConfig.TARGET_RANGE = targetRange;
+
+  const newEnvConfig = Object.keys(envConfig)
+    .map(key => `${key}=${envConfig[key]}`)
+    .join('\n');
+
+  fs.writeFileSync(envPath, newEnvConfig);
+
+  // Write last fetched row index to file
+  fs.writeFileSync(LAST_FETCHED_ROW_INDEX_FILE, lastFetchedRow.toString(), 'utf8');
+
+  // Reload .env file
+  dotenv.config({ path: envPath });
+
+  res.status(200).send('Environment variables updated successfully');
+}
+
+// Function to handle login bypass
+async function bypassLogin(req: Request, res: Response) {
+  try {
+    const adminUser = await User.findOne(); // Assuming a single user for simplicity
+    if (adminUser) {
+      req.login(adminUser, (err) => {
+        if (err) {
+          console.error('Failed to login admin user', err);
+          return res.status(500).send('Failed to login');
+        }
+        return res.redirect('/');
+      });
+    } else {
+      res.status(500).send('Admin user not found');
+    }
+  } catch (error) {
+    console.error('Error in bypass-login route', error);
+    res.status(500).send('Internal Server Error');
+  }
+}
+
+// Schedule token refresh task to run every hour
+cron.schedule('0 * * * *', async () => {
+  const users = await User.find();
+  for (const user of users) {
+    await refreshAccessToken(user);
+  }
 });
