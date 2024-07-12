@@ -17,7 +17,7 @@ npm install
 npm start
 ```
 
-Откройте браузер и перейдите 'http://localhost:3000/bypass-login'. Готово!
+Откройте браузер и перейдите `http://localhost:3000/bypass-login`. Готово!
 
 ### Функционал
 * Полная автоматизация
