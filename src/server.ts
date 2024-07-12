@@ -465,7 +465,7 @@ cron.schedule('* * * * *', async () => {
 function updateEnv(req: Request, res: Response) {
   const { spreadsheetId, range, targetSpreadsheetId, targetRange, lastFetchedRow } = req.body;
 
-  const envPath = path.resolve(__dirname, '../.env');
+  const envPath = path.resolve(__dirname, '../../../.env');
   const envConfig = dotenv.parse(fs.readFileSync(envPath));
 
   envConfig.SPREADSHEET_ID = spreadsheetId;
