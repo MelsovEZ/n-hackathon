@@ -464,26 +464,11 @@ cron.schedule('* * * * *', async () => {
 // Function to update the .env file
 function updateEnv(req: Request, res: Response) {
   const { spreadsheetId, range, targetSpreadsheetId, targetRange, lastFetchedRow } = req.body;
-
-  const envPath = path.resolve(__dirname, '../../.env');
-  const envConfig = dotenv.parse(fs.readFileSync(envPath));
-
-  envConfig.SPREADSHEET_ID = spreadsheetId;
-  envConfig.RANGE = range;
-  envConfig.TARGET_SPREADSHEET_ID = targetSpreadsheetId;
-  envConfig.TARGET_RANGE = targetRange;
-
-  const newEnvConfig = Object.keys(envConfig)
-    .map(key => `${key}=${envConfig[key]}`)
-    .join('\n');
-
-  fs.writeFileSync(envPath, newEnvConfig);
-
-  // Write last fetched row index to file
-  fs.writeFileSync(LAST_FETCHED_ROW_INDEX_FILE, lastFetchedRow.toString(), 'utf8');
-
-  // Reload .env file
-  dotenv.config({ path: envPath });
+  
+  process.env.SPREADSHEET_ID = spreadsheetId;
+  process.env.RANGE = range;
+  process.env.TARGET_SPREADSHEET_ID = targetSpreadsheetId;
+  process.env.TARGET_RANGE = targetRange;
 
   res.status(200).send('Environment variables updated successfully');
 }
