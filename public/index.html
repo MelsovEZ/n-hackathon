@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update .env File</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+        }
+        .form-group button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Set ID</h2>
+        <form id="envForm">
+            <div class="form-group">
+                <label for="spreadsheetLink">Spreadsheet Link of form answers</label>
+                <input type="text" id="spreadsheetLink" name="spreadsheetLink" required>
+            </div>
+            <div class="form-group">
+                <label for="range">Range (List1, Page1 and etc...)</label>
+                <input type="text" id="range" name="range" required>
+            </div>
+            <div class="form-group">
+                <label for="targetSpreadsheetLink">Spreadsheet Link of results sheet</label>
+                <input type="text" id="targetSpreadsheetLink" name="targetSpreadsheetLink" required>
+            </div>
+            <div class="form-group">
+                <label for="targetRange">Range (List1, Page1 and etc...)</label>
+                <input type="text" id="targetRange" name="targetRange" required>
+            </div>
+            <div class="form-group">
+                <label for="lastFetchedRow">Last Fetched Row</label>
+                <input type="number" id="lastFetchedRow" name="lastFetchedRow">
+            </div>
+            <div class="form-group">
+                <button type="submit">Update</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('envForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const spreadsheetLink = document.getElementById('spreadsheetLink').value;
+            const range = document.getElementById('range').value;
+            const targetSpreadsheetLink = document.getElementById('targetSpreadsheetLink').value;
+            const targetRange = document.getElementById('targetRange').value;
+            const lastFetchedRow = document.getElementById('lastFetchedRow').value;
+
+            // Function to extract ID from link
+            function extractSpreadsheetId(link) {
+                const match = link.match(/\/d\/(.*?)(\/|$)/);
+                return match ? match[1] : null;
+            }
+
+            const spreadsheetId = extractSpreadsheetId(spreadsheetLink);
+            const targetSpreadsheetId = extractSpreadsheetId(targetSpreadsheetLink);
+
+            if (!spreadsheetId || !targetSpreadsheetId) {
+                alert('Invalid spreadsheet link(s).');
+                return;
+            }
+
+            const data = {
+                spreadsheetId,
+                range,
+                targetSpreadsheetId,
+                targetRange,
+                lastFetchedRow
+            };
+
+            try {
+                const response = await fetch('/update-env', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert('Environment variables updated successfully!');
+                } else {
+                    alert('Failed to update environment variables.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while updating environment variables.');
+            }
+        });
+    </script>
+</body>
+</html>
